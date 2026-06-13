@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finanças — Dashboard</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0d1117;--bg2:#161b27;--bg3:#1c2236;--bg4:#222840;
+    --border:#ffffff12;--border2:#ffffff1e;
+    --text:#dde1f0;--text2:#7b82a0;--text3:#454d6a;
+    --green:#1D9E75;--green2:#0F6E56;--green3:#085041;--green-s:#0a2820;--green-t:#9FE1CB;
+    --red:#D85A30;--red2:#993C1D;--red-s:#2a1108;--red-t:#F0997B;
+    --purple:#7F77DD;--purple-s:#1a1a36;--purple-t:#AFA9EC;
+    --amber:#EF9F27;--amber-s:#251b07;--amber-t:#FAC775;
+    --teal:#5DCAA5;--blue:#378ADD;
+    --radius:10px;--radius-lg:14px;
+  }
+  body{background:var(--bg);color:var(--text);font-family:'Inter','Segoe UI',system-ui,sans-serif;font-size:14px;min-height:100vh}
+  
+  /* Layout */
+  .app{max-width:960px;margin:0 auto;padding:1.25rem 1rem 3rem}
+  
+  /* Topbar */
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem}
+  .logo-wrap{display:flex;align-items:center;gap:10px}
+  .logo{width:34px;height:34px;background:var(--green3);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px}
+  .app-name{font-size:16px;font-weight:600;letter-spacing:-.01em}
+  .month-badge{font-size:12px;color:var(--text2);background:var(--bg3);border:0.5px solid var(--border2);border-radius:20px;padding:5px 14px}
+
+  /* Nav */
+  .nav{display:flex;gap:2px;border-bottom:0.5px solid var(--border);margin-bottom:1.5rem}
+  .nb{padding:8px 14px;font-size:13px;color:var(--text2);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;margin-bottom:-0.5px;transition:color .15s}
+  .nb.on{color:var(--green);border-bottom-color:var(--green);font-weight:500}
+  .nb:hover:not(.on){color:var(--text)}
+
+  /* KPIs */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:1.25rem}
+  .kpi{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:.875rem 1rem}
+  .kpi-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:flex;align-items:center;gap:4px}
+  .kpi-val{font-size:20px;font-weight:600;letter-spacing:-.02em}
+  .kpi-val.g{color:var(--green)}.kpi-val.r{color:var(--red)}.kpi-val.p{color:var(--purple)}.kpi-val.a{color:var(--amber)}
+  .kpi-sub{font-size:10px;color:var(--text3);margin-top:3px}
+
+  /* Grid */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+  @media(max-width:560px){.grid2{grid-template-columns:1fr}}
+
+  /* Panel */
+  .panel,.panel-full{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.125rem}
+  .panel-full{margin-bottom:10px}
+  .ptitle{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between}
+
+  /* Add button */
+  .add-btn{background:var(--green3);border:none;color:var(--green-t);border-radius:7px;padding:5px 11px;font-size:11px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-weight:500}
+  .add-btn:hover{background:var(--green2)}
+
+  /* Transactions */
+  .tx{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg3);border-radius:8px;margin-bottom:5px}
+  .tx:last-child{margin-bottom:0}
+  .tx-l{display:flex;align-items:center;gap:9px}
+  .dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+  .dot.e{background:var(--green-s);color:var(--teal)}.dot.s{background:var(--red-s);color:var(--red-t)}
+  .tx-name{font-size:13px;color:var(--text);font-weight:500}
+  .tx-cat{font-size:10px;color:var(--text3);margin-top:1px}
+  .tx-val{font-size:13px;font-weight:600}
+  .tx-val.e{color:var(--green)}.tx-val.s{color:var(--red)}
+  .del-btn{background:none;border:none;color:var(--text3);cursor:pointer;padding:3px 5px;border-radius:5px;font-size:13px;line-height:1}
+  .del-btn:hover{color:var(--red);background:var(--red-s)}
+
+  /* Category bars */
+  .bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .bar-row:last-child{margin-bottom:0}
+  .bar-lbl{font-size:10px;color:var(--text2);width:78px;text-align:right;flex-shrink:0}
+  .bar-bg{flex:1;background:var(--bg3);border-radius:3px;height:7px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:3px;transition:width .4s ease}
+  .bar-amt{font-size:10px;color:var(--text2);width:60px}
+
+  /* Metas */
+  .meta-blk{margin-bottom:12px;padding-bottom:12px;border-bottom:0.5px solid var(--border)}
+  .meta-blk:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+  .meta-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+  .meta-name{font-size:13px;color:var(--text);font-weight:500}
+  .meta-vals{font-size:10px;color:var(--text3)}
+  .mprog{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-bottom:4px}
+  .mpf{height:100%;border-radius:3px;transition:width .5s ease}
+  .meta-foot{display:flex;justify-content:space-between;font-size:10px;color:var(--text3)}
+
+  /* Dividas */
+  .dblk{background:var(--bg3);border-radius:9px;padding:10px 12px;margin-bottom:8px}
+  .dblk:last-child{margin-bottom:0}
+  .dtop{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .dname{font-size:13px;color:var(--text);font-weight:500}
+  .dbadge{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500}
+  .dbadge.alta{background:var(--red-s);color:var(--red-t)}
+  .dbadge.media{background:var(--amber-s);color:var(--amber-t)}
+  .dbadge.baixa{background:var(--green-s);color:var(--green-t)}
+  .drow{display:flex;flex-wrap:wrap;gap:10px;font-size:10px;color:var(--text3);margin-bottom:6px}
+  .drow b{color:var(--text2);font-weight:500}
+  .dprog{height:5px;background:var(--bg2);border-radius:3px;overflow:hidden}
+  .dpf{height:100%;border-radius:3px;transition:width .5s ease}
+  .dpct{font-size:10px;color:var(--text3);margin-top:4px}
+
+  /* Empty state */
+  .empty{text-align:center;padding:2rem 1rem;color:var(--text3);font-size:12px;line-height:1.6}
+  .empty-icon{font-size:26px;display:block;margin-bottom:8px}
+
+  /* Hidden */
+  .hidden{display:none}
+
+  /* Modal */
+  .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);align-items:center;justify-content:center;z-index:100;padding:1rem}
+  .modal-bg.open{display:flex}
+  .modal{background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-lg);padding:1.25rem;width:min(380px,100%)}
+  .mtitle{font-size:14px;font-weight:600;color:var(--text);margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between}
+  .xbtn{background:none;border:none;color:var(--text2);font-size:18px;cursor:pointer;line-height:1}
+  .xbtn:hover{color:var(--text)}
+  .frow{margin-bottom:10px}
+  .frow label{font-size:10px;color:var(--text3);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;font-weight:500}
+  .frow input,.frow select{width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px;padding:8px 10px;outline:none;font-family:inherit}
+  .frow input:focus,.frow select:focus{border-color:var(--green2)}
+  .frow select option{background:var(--bg2)}
+  .tipo-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+  .tbtn{padding:8px;border:0.5px solid var(--border2);border-radius:8px;background:var(--bg3);color:var(--text2);font-size:12px;cursor:pointer;text-align:center;font-family:inherit;transition:all .15s}
+  .tbtn.se{background:var(--green-s);border-color:var(--green2);color:var(--green-t);font-weight:500}
+  .tbtn.ss{background:var(--red-s);border-color:var(--red2);color:var(--red-t);font-weight:500}
+  .sbtn{width:100%;background:var(--green2);border:none;color:var(--green-t);border-radius:8px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;margin-top:4px;font-family:inherit;letter-spacing:.01em}
+  .sbtn:hover{background:var(--green)}
+
+  /* Scrollbar */
+  ::-webkit-scrollbar{width:6px}
+  ::-webkit-scrollbar-track{background:var(--bg2)}
+  ::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
+
+  /* Pagination */
+  .tx-container{max-height:360px;overflow-y:auto}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="topbar">
+    <div class="logo-wrap">
+      <div class="logo">💰</div>
+      <span class="app-name">Finanças</span>
+    </div>
+    <div class="month-badge" id="mlabel"></div>
+  </div>
+
+  <div class="nav">
+    <button class="nb on" onclick="tab('v')">Visão geral</button>
+    <button class="nb" onclick="tab('t')">Transações</button>
+    <button class="nb" onclick="tab('m')">Metas</button>
+    <button class="nb" onclick="tab('d')">Dívidas</button>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <!-- Visão geral -->
+  <div id="sv">
+    <div class="grid2">
+      <div class="panel">
+        <div class="ptitle">Últimas entradas</div>
+        <div id="prev-e"></div>
+      </div>
+      <div class="panel">
+        <div class="ptitle">Últimas saídas</div>
+        <div id="prev-s"></div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="panel">
+        <div class="ptitle">Saídas por categoria</div>
+        <div id="cat-bars"></div>
+      </div>
+      <div class="panel">
+        <div class="ptitle">Metas ativas</div>
+        <div id="metas-prev"></div>
+      </div>
+    </div>
+    <div class="panel-full" style="margin-top:10px">
+      <div class="ptitle">Dívidas ativas</div>
+      <div id="dividas-prev"></div>
+    </div>
+  </div>
+
+  <!-- Transações -->
+  <div id="st" class="hidden">
+    <div class="panel-full">
+      <div class="ptitle">
+        Todas as transações
+        <button class="add-btn" onclick="open_modal('tx')">+ Nova transação</button>
+      </div>
+      <div class="tx-container"><div id="tx-all"></div></div>
+    </div>
+  </div>
+
+  <!-- Metas -->
+  <div id="sm" class="hidden">
+    <div class="panel-full">
+      <div class="ptitle">
+        Metas financeiras
+        <button class="add-btn" onclick="open_modal('meta')">+ Nova meta</button>
+      </div>
+      <div id="metas-all"></div>
+    </div>
+  </div>
+
+  <!-- Dívidas -->
+  <div id="sd" class="hidden">
+    <div class="panel-full">
+      <div class="ptitle">
+        Dívidas e parcelamentos
+        <button class="add-btn" onclick="open_modal('divida')">+ Nova dívida</button>
+      </div>
+      <div id="dividas-all"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal -->
+<div class="modal-bg" id="mbg" onclick="if(event.target===this)close_modal()">
+  <div class="modal">
+    <div class="mtitle">
+      <span id="mt"></span>
+      <button class="xbtn" onclick="close_modal()">✕</button>
+    </div>
+    <div id="mbody"></div>
+  </div>
+</div>
+
+<script>
+const meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const now=new Date();
+document.getElementById('mlabel').textContent=meses[now.getMonth()]+' de '+now.getFullYear();
+
+const catsSd=['Alimentação','Transporte','Moradia','Saúde','Educação','Lazer','Roupas','Negócios','Outros'];
+const catsEn=['Salário','Freelance','TikTok Shop','Afiliados','Revenda','Outros'];
+const cc=['#1D9E75','#378ADD','#EF9F27','#D4537E','#7F77DD','#D85A30','#5DCAA5','#888780','#E24B4A'];
+const mc=['#1D9E75','#378ADD','#7F77DD','#EF9F27','#D85A30','#5DCAA5'];
+
+let S={txs:[],metas:[],dividas:[]};
+try{const r=localStorage.getItem('fin_dash_v1');if(r)S=JSON.parse(r);}catch(e){}
+const save=()=>{try{localStorage.setItem('fin_dash_v1',JSON.stringify(S));}catch(e){}};
+
+const fmt=v=>'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmts=v=>{const n=Number(v);if(n>=1000000)return 'R$ '+(n/1000000).toFixed(1)+'M';if(n>=1000)return 'R$ '+(n/1000).toFixed(1)+'k';return fmt(n);};
+const g=id=>document.getElementById(id);
+
+let curTab='v';
+let txTipo='e';
+
+function tab(t){
+  curTab=t;
+  document.querySelectorAll('.nb').forEach((b,i)=>b.classList.toggle('on',['v','t','m','d'][i]===t));
+  ['sv','st','sm','sd'].forEach(id=>g(id).classList.toggle('hidden',id!=='s'+t));
+  render();
+}
+
+function render(){
+  const en=S.txs.filter(t=>t.tp==='e').reduce((a,t)=>a+t.v,0);
+  const sa=S.txs.filter(t=>t.tp==='s').reduce((a,t)=>a+t.v,0);
+  const sl=en-sa;
+  const td=S.dividas.reduce((a,d)=>a+(d.total-d.pago),0);
+
+  g('kpis').innerHTML=`
+    <div class="kpi"><div class="kpi-lbl">↑ Entradas</div><div class="kpi-val g">${fmts(en)}</div><div class="kpi-sub">${S.txs.filter(t=>t.tp==='e').length} registros</div></div>
+    <div class="kpi"><div class="kpi-lbl">↓ Saídas</div><div class="kpi-val r">${fmts(sa)}</div><div class="kpi-sub">${S.txs.filter(t=>t.tp==='s').length} registros</div></div>
+    <div class="kpi"><div class="kpi-lbl">⬡ Saldo</div><div class="kpi-val ${sl>=0?'g':'r'}">${fmts(sl)}</div><div class="kpi-sub">${sl>=0?'No positivo':'Atenção'}</div></div>
+    <div class="kpi"><div class="kpi-lbl">◈ A pagar</div><div class="kpi-val a">${fmts(td)}</div><div class="kpi-sub">${S.dividas.length} dívidas</div></div>
+  `;
+
+  if(curTab==='v'){
+    const lastE=[...S.txs].filter(t=>t.tp==='e').slice(-5).reverse();
+    const lastS=[...S.txs].filter(t=>t.tp==='s').slice(-5).reverse();
+    g('prev-e').innerHTML=lastE.length?lastE.map(t=>txRow(t,false)).join(''):'<div class="empty"><span class="empty-icon">📥</span>Sem entradas ainda</div>';
+    g('prev-s').innerHTML=lastS.length?lastS.map(t=>txRow(t,false)).join(''):'<div class="empty"><span class="empty-icon">📤</span>Sem saídas ainda</div>';
+    catBars();
+    const mp=S.metas.slice(0,3);
+    g('metas-prev').innerHTML=mp.length?mp.map((m,i)=>metaBlk(m,i,false)).join(''):'<div class="empty"><span class="empty-icon">🎯</span>Nenhuma meta</div>';
+    const dp=S.dividas.slice(0,3);
+    g('dividas-prev').innerHTML=dp.length?dp.map(d=>dividaBlk(d,false)).join(''):'<div class="empty"><span class="empty-icon">✅</span>Sem dívidas cadastradas</div>';
+  }
+
+  if(curTab==='t'){
+    const all=[...S.txs].reverse();
+    g('tx-all').innerHTML=all.length?all.map(t=>txRow(t,true)).join(''):'<div class="empty"><span class="empty-icon">📋</span>Nenhuma transação ainda.<br>Clique em "Nova transação" para começar.</div>';
+  }
+  if(curTab==='m'){
+    g('metas-all').innerHTML=S.metas.length?S.metas.map((m,i)=>metaBlk(m,i,true)).join(''):'<div class="empty"><span class="empty-icon">🎯</span>Nenhuma meta cadastrada.<br>Clique em "Nova meta" para criar sua primeira.</div>';
+  }
+  if(curTab==='d'){
+    g('dividas-all').innerHTML=S.dividas.length?S.dividas.map(d=>dividaBlk(d,true)).join(''):'<div class="empty"><span class="empty-icon">💳</span>Nenhuma dívida cadastrada.<br>Clique em "Nova dívida" para adicionar.</div>';
+  }
+}
+
+function txRow(t,del){
+  const d=del?`<button class="del-btn" onclick="delTx(${t.id})" title="Remover">✕</button>`:'';
+  return `<div class="tx">
+    <div class="tx-l">
+      <div class="dot ${t.tp}">${t.tp==='e'?'↓':'↑'}</div>
+      <div>
+        <div class="tx-name">${esc(t.desc)}</div>
+        <div class="tx-cat">${esc(t.cat)} · ${t.dt}</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="tx-val ${t.tp}">${t.tp==='e'?'+':'-'} ${fmt(t.v)}</span>
+      ${d}
+    </div>
+  </div>`;
+}
+
+function catBars(){
+  const byCat={};
+  S.txs.filter(t=>t.tp==='s').forEach(t=>{byCat[t.cat]=(byCat[t.cat]||0)+t.v;});
+  const ent=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  const max=ent[0]?.[1]||1;
+  const el=g('cat-bars');
+  if(!ent.length){el.innerHTML='<div class="empty">Adicione saídas para ver o gráfico</div>';return;}
+  el.innerHTML=ent.map(([cat,val],i)=>`
+    <div class="bar-row">
+      <span class="bar-lbl">${cat}</span>
+      <div class="bar-bg"><div class="bar-fill" style="width:${Math.round(val/max*100)}%;background:${cc[i%cc.length]}"></div></div>
+      <span class="bar-amt">${fmts(val)}</span>
+    </div>
+  `).join('');
+}
+
+function metaBlk(m,i,del){
+  const pct=Math.min(100,Math.round(m.atual/m.total*100));
+  const col=mc[i%mc.length];
+  const d=del?`<button class="del-btn" onclick="delMeta(${m.id})" title="Remover">✕</button>`:'';
+  return `<div class="meta-blk">
+    <div class="meta-top">
+      <span class="meta-name">${esc(m.nome)}</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="meta-vals">${fmt(m.atual)} / ${fmt(m.total)}</span>
+        ${d}
+      </div>
+    </div>
+    <div class="mprog"><div class="mpf" style="width:${pct}%;background:${col}"></div></div>
+    <div class="meta-foot">
+      <span>${pct}% concluído</span>
+      ${m.prazo?`<span>Prazo: ${m.prazo}</span>`:''}
+    </div>
+  </div>`;
+}
+
+function dividaBlk(d,del){
+  const pct=Math.min(100,Math.round(d.pago/d.total*100));
+  const pc={alta:'#D85A30',media:'#EF9F27',baixa:'#1D9E75'}[d.prio]||'#888';
+  const db=del?`<button class="del-btn" onclick="delDivida(${d.id})" title="Remover">✕</button>`:'';
+  return `<div class="dblk">
+    <div class="dtop">
+      <span class="dname">${esc(d.nome)}</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="dbadge ${d.prio}">${d.prio} prioridade</span>
+        ${db}
+      </div>
+    </div>
+    <div class="drow">
+      <span>Total: <b>${fmt(d.total)}</b></span>
+      <span>Pago: <b>${fmt(d.pago)}</b></span>
+      <span>Restante: <b style="color:${pc}">${fmt(d.total-d.pago)}</b></span>
+      ${d.parc?`<span>Parcelas: <b>${d.parc}</b></span>`:''}
+    </div>
+    <div class="dprog"><div class="dpf" style="width:${pct}%;background:${pc}"></div></div>
+    <div class="dpct">${pct}% quitado</div>
+  </div>`;
+}
+
+function open_modal(type){
+  txTipo='e';
+  const titles={tx:'Nova transação',meta:'Nova meta',divida:'Nova dívida'};
+  g('mt').textContent=titles[type];
+  let html='';
+  if(type==='tx'){
+    html=`
+      <div class="tipo-row">
+        <button class="tbtn se" id="be" onclick="setTipo('e')">↓ Entrada</button>
+        <button class="tbtn" id="bs" onclick="setTipo('s')">↑ Saída</button>
+      </div>
+      <div class="frow"><label>Descrição</label><input id="fd" placeholder="Ex: Salário, Mercado, iFood..."/></div>
+      <div class="frow"><label>Valor (R$)</label><input id="fv" type="number" min="0" step="0.01" placeholder="0,00"/></div>
+      <div class="frow"><label>Categoria</label><select id="fc">${catsEn.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div class="frow"><label>Data</label><input id="fdt" type="date" value="${now.toISOString().slice(0,10)}"/></div>
+      <button class="sbtn" onclick="saveTx()">✓ Salvar transação</button>
+    `;
+  } else if(type==='meta'){
+    html=`
+      <div class="frow"><label>Nome da meta</label><input id="mn" placeholder="Ex: Reserva de emergência, Viagem..."/></div>
+      <div class="frow"><label>Valor total da meta (R$)</label><input id="mv" type="number" min="0" placeholder="0,00"/></div>
+      <div class="frow"><label>Valor já guardado (R$)</label><input id="ma" type="number" min="0" placeholder="0,00"/></div>
+      <div class="frow"><label>Prazo (opcional)</label><input id="mp" type="month"/></div>
+      <button class="sbtn" onclick="saveMeta()">✓ Salvar meta</button>
+    `;
+  } else {
+    html=`
+      <div class="frow"><label>Nome da dívida</label><input id="dn" placeholder="Ex: Cartão Nubank, Empréstimo..."/></div>
+      <div class="frow"><label>Valor total (R$)</label><input id="dv" type="number" min="0" placeholder="0,00"/></div>
+      <div class="frow"><label>Valor já pago (R$)</label><input id="dp" type="number" min="0" placeholder="0,00"/></div>
+      <div class="frow"><label>Número de parcelas (opcional)</label><input id="dpa" type="number" min="0" placeholder="Ex: 12"/></div>
+      <div class="frow"><label>Prioridade</label>
+        <select id="dpr">
+          <option value="alta">🔴 Alta</option>
+          <option value="media" selected>🟡 Média</option>
+          <option value="baixa">🟢 Baixa</option>
+        </select>
+      </div>
+      <button class="sbtn" onclick="saveDivida()">✓ Salvar dívida</button>
+    `;
+  }
+  g('mbody').innerHTML=html;
+  g('mbg').classList.add('open');
+}
+
+function close_modal(){g('mbg').classList.remove('open');}
+
+function setTipo(t){
+  txTipo=t;
+  g('be').className='tbtn'+(t==='e'?' se':'');
+  g('bs').className='tbtn'+(t==='s'?' ss':'');
+  g('fc').innerHTML=(t==='e'?catsEn:catsSd).map(c=>`<option>${c}</option>`).join('');
+}
+
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+
+function saveTx(){
+  const desc=g('fd').value.trim();
+  const val=parseFloat(g('fv').value);
+  if(!desc){alert('Preencha a descrição.');return;}
+  if(isNaN(val)||val<=0){alert('Informe um valor válido.');return;}
+  S.txs.push({id:Date.now(),tp:txTipo,desc,v:val,cat:g('fc').value,dt:g('fdt').value||now.toISOString().slice(0,10)});
+  save();close_modal();render();
+}
+
+function saveMeta(){
+  const nome=g('mn').value.trim();
+  const total=parseFloat(g('mv').value);
+  const atual=parseFloat(g('ma').value)||0;
+  if(!nome){alert('Dê um nome para a meta.');return;}
+  if(isNaN(total)||total<=0){alert('Informe o valor total da meta.');return;}
+  S.metas.push({id:Date.now(),nome,total,atual,prazo:g('mp').value||''});
+  save();close_modal();render();
+}
+
+function saveDivida(){
+  const nome=g('dn').value.trim();
+  const total=parseFloat(g('dv').value);
+  const pago=parseFloat(g('dp').value)||0;
+  if(!nome){alert('Dê um nome para a dívida.');return;}
+  if(isNaN(total)||total<=0){alert('Informe o valor total.');return;}
+  S.dividas.push({id:Date.now(),nome,total,pago,parc:parseInt(g('dpa').value)||0,prio:g('dpr').value});
+  save();close_modal();render();
+}
+
+function delTx(id){if(!confirm('Remover esta transação?'))return;S.txs=S.txs.filter(t=>t.id!==id);save();render();}
+function delMeta(id){if(!confirm('Remover esta meta?'))return;S.metas=S.metas.filter(m=>m.id!==id);save();render();}
+function delDivida(id){if(!confirm('Remover esta dívida?'))return;S.dividas=S.dividas.filter(d=>d.id!==id);save();render();}
+
+render();
+</script>
+</body>
+</html>

@@ -354,10 +354,15 @@ function dividaBlk(d,del){
   const pct=Math.min(100,Math.round(d.pago/d.total*100));
   const pc={alta:'#D85A30',media:'#EF9F27',baixa:'#1D9E75'}[d.prio]||'#888';
   const db=del?`<button class="del-btn" onclick="delDivida(${d.id})" title="Remover">✕</button>`:'';
+  const quitado=d.pago>=d.total;
+  const btnPagar=del&&!quitado?`<button onclick="abrirPagamento(${d.id})" style="background:#0F6E56;border:none;color:#9FE1CB;border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;font-weight:500">💸 Pagar dívida</button>`:'';
+  const quitadoBadge=quitado?`<span style="background:#0a2820;color:#5DCAA5;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:500">✓ Quitada</span>`:'';
   return `<div class="dblk">
     <div class="dtop">
       <span class="dname">${esc(d.nome)}</span>
-      <div style="display:flex;align-items:center;gap:8px">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+        ${btnPagar}
+        ${quitadoBadge}
         <span class="dbadge ${d.prio}">${d.prio} prioridade</span>
         ${db}
       </div>
@@ -365,12 +370,44 @@ function dividaBlk(d,del){
     <div class="drow">
       <span>Total: <b>${fmt(d.total)}</b></span>
       <span>Pago: <b>${fmt(d.pago)}</b></span>
-      <span>Restante: <b style="color:${pc}">${fmt(d.total-d.pago)}</b></span>
+      <span>Restante: <b style="color:${pc}">${fmt(Math.max(0,d.total-d.pago))}</b></span>
       ${d.parc?`<span>Parcelas: <b>${d.parc}</b></span>`:''}
     </div>
     <div class="dprog"><div class="dpf" style="width:${pct}%;background:${pc}"></div></div>
     <div class="dpct">${pct}% quitado</div>
   </div>`;
+}
+
+function abrirPagamento(id){
+  const d=S.dividas.find(d=>d.id===id);
+  if(!d)return;
+  const restante=d.total-d.pago;
+  g('mt').textContent='Registrar pagamento';
+  g('mbody').innerHTML=`
+    <div style="background:var(--bg3);border-radius:8px;padding:10px 12px;margin-bottom:12px">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:4px">${esc(d.nome)}</div>
+      <div style="display:flex;gap:14px;font-size:11px;color:var(--text3)">
+        <span>Total: <b style="color:var(--text2)">${fmt(d.total)}</b></span>
+        <span>Já pago: <b style="color:var(--green)">${fmt(d.pago)}</b></span>
+        <span>Restante: <b style="color:var(--red)">${fmt(restante)}</b></span>
+      </div>
+    </div>
+    <div class="frow"><label>Valor do pagamento (R$)</label><input id="pag-val" type="number" min="0.01" max="${restante}" step="0.01" placeholder="0,00"/></div>
+    <div class="frow"><label>Data do pagamento</label><input id="pag-dt" type="date" value="${now.toISOString().slice(0,10)}"/></div>
+    <button class="sbtn" onclick="confirmarPagamento(${id})">✓ Confirmar pagamento</button>
+  `;
+  g('mbg').classList.add('open');
+}
+
+function confirmarPagamento(id){
+  const d=S.dividas.find(d=>d.id===id);
+  if(!d)return;
+  const val=parseFloat(g('pag-val').value);
+  if(isNaN(val)||val<=0){alert('Informe um valor válido.');return;}
+  const restante=d.total-d.pago;
+  if(val>restante){alert(`O valor máximo é ${fmt(restante)}.`);return;}
+  d.pago=parseFloat((d.pago+val).toFixed(2));
+  save();close_modal();render();
 }
 
 function open_modal(type){
